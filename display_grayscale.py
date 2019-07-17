@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
+from PIL import Image
 
 images_path = "./HCL2000-100/HCL2000_100_train.npz"
 labels_path = "./HCL2000-100/HCL2000_100_train_label.npz"
@@ -21,7 +22,9 @@ plt.imshow(images[1].reshape((28, 28)), cmap=plt.cm.gray_r)
 plt.subplot(223)
 plt.imshow(images[2].reshape((28, 28)), cmap='gray')
 plt.subplot(224)
-plt.imshow(images[3].reshape((28, 28)), cmap='gray_r')
+pilimage = Image.fromarray(images[3].reshape((28, 28)))
+plt.imshow(pilimage, cmap='gray_r')
+# plt.imshow(images[3].reshape((28, 28)), cmap='gray_r')
 plt.show()
 
 # 分别显示4张图
