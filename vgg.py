@@ -1,7 +1,9 @@
-'''VGG11/13/16/19 in Pytorch.'''
+"""VGG11/13/16/19 in Pytorch."""
+"""
+输入网络的image为244x244
+"""
 import torch
 import torch.nn as nn
-
 
 cfg = {
     'VGG11': [64, 'M', 128, 'M', 256, 256, 'M', 512, 512, 'M', 512, 512, 'M'],
@@ -12,10 +14,18 @@ cfg = {
 
 
 class VGG(nn.Module):
-    def __init__(self, vgg_name):
+    def __init__(self, vgg_name, num_classes):
         super(VGG, self).__init__()
         self.features = self._make_layers(cfg[vgg_name])
-        self.classifier = nn.Linear(512, 10)
+        self.classifier = nn.Sequential(
+            nn.Linear(512 * 7 * 7, 4096),
+            nn.ReLU(True),
+            nn.Dropout(),
+            nn.Linear(4096, 4096),
+            nn.ReLU(True),
+            nn.Dropout(),
+            nn.Linear(4096, num_classes)
+        )
 
     def forward(self, x):
         out = self.features(x)
@@ -39,9 +49,11 @@ class VGG(nn.Module):
 
 
 def test():
-    net = VGG('VGG11')
-    x = torch.randn(2,3,32,32)
+    net = VGG('VGG16', 10)
+    x = torch.randn(2, 3, 224, 224)
     y = net(x)
     print(y.size())
 
-test()
+
+if __name__ == '__main__':
+    test()

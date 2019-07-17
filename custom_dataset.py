@@ -27,16 +27,10 @@ class HCL(Dataset):
             label = self.target_transforms(label)
         # If the transform variable is not empty
         # then it applies the operations in the transforms with the order that it is created.
-        return (image, label)
+        return image, label
 
     def __len__(self):
         return self.images.shape[0]  # of how many data(images?) you have
-
-
-trainset = HCL(images_path="./HCL2000-100/HCL2000_100_train.npz",
-               labels_path="./HCL2000-100/HCL2000_100_train_label.npz")
-
-trainloader = torch.utils.data.DataLoader(trainset, batch_size=4, shuffle=True)
 
 
 # functions to show an image
@@ -47,15 +41,24 @@ def imshow(img):
     plt.show()
 
 
-# get some random training images
-dataiter = iter(trainloader)
-images, labels = dataiter.next()
-print(images.shape)
-print(images.unsqueeze(1).shape)
-print(torchvision.utils.make_grid(images.unsqueeze(1)).shape)
+def test():
+    trainset = HCL(images_path="./HCL2000-100/HCL2000_100_train.npz",
+                   labels_path="./HCL2000-100/HCL2000_100_train_label.npz")
 
-# show images
-# make_grid 只接受 4D mini-batch Tensor of shape (B x C x H x W)的输入，unsqueeze增加C这一维度
-imshow(torchvision.utils.make_grid(images.unsqueeze(1), pad_value=255))
-# print labels
-print('labels: ', ' '.join('%5s' % labels[j].item() for j in range(4)))
+    trainloader = torch.utils.data.DataLoader(trainset, batch_size=4, shuffle=True)
+    # get some random training images
+    dataiter = iter(trainloader)
+    images, labels = dataiter.next()
+    print(images.shape)
+    print(images.unsqueeze(1).shape)
+    print(torchvision.utils.make_grid(images.unsqueeze(1)).shape)
+
+    # show images
+    # make_grid 只接受 4D mini-batch Tensor of shape (B x C x H x W)的输入，unsqueeze增加C这一维度
+    imshow(torchvision.utils.make_grid(images.unsqueeze(1), pad_value=255))
+    # print labels
+    print('labels: ', ' '.join('%5s' % labels[j].item() for j in range(4)))
+
+
+if __name__ == '__main__':
+    test()
