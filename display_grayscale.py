@@ -25,7 +25,7 @@ plt.imshow(images[2].reshape((28, 28)), cmap='gray')
 plt.show()
 
 plt.figure()
-pilimage = Image.fromarray(images[3].reshape((28, 28)))
+pilimage = Image.fromarray(images[3].reshape((28, 28)), 'L')
 pilimage = pilimage.resize((224,224))
 plt.imshow(pilimage, cmap='gray_r')
 # plt.imshow(images[3].reshape((28, 28)), cmap='gray_r')
