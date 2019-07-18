@@ -7,7 +7,7 @@ from torch.utils.data.dataset import Dataset
 import torchvision.transforms as transforms
 
 """
-the beginning images and labels are ndarray, 
+the beginning images and labels are ndarray,
 after init images are still ndarray, labels are tensor.
 should be transformed to PIL image eventually to Tensor
 """
