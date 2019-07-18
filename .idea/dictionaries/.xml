@@ -1,9 +1,12 @@
 <component name="ProjectDictionaryState">
   <dictionary name="机械师">
     <words>
+      <w>cuda</w>
       <w>gitignore</w>
       <w>grayscale</w>
       <w>ndarray</w>
+      <w>testset</w>
+      <w>trainset</w>
     </words>
   </dictionary>
 </component>

@@ -22,7 +22,8 @@ class HCL(Dataset):
         images = np.expand_dims(images_array_reshape, axis=1)  # N*C*H*W
         self.images = images.transpose((0, 2, 3, 1))  # N*H*W*C
         labels = labels_data["arr_0"]
-        self.labels = torch.from_numpy(labels.astype(np.int16))
+        labels_map = label_map(labels)
+        self.labels = torch.from_numpy(labels_map.astype(np.long))
         self.transforms = transform
         self.target_transforms = target_transform
 
@@ -41,6 +42,20 @@ class HCL(Dataset):
         return self.images.shape[0]  # of how many data(images?) you have
 
 
+# 把原来的label映射到0-99
+def label_map(labels):
+    label_dict = {}
+    current_index = 0
+    map_index = 0
+    for label in labels:
+        if label not in label_dict:
+            label_dict[label] = map_index
+            map_index += 1
+        labels[current_index] = label_dict[label]
+        current_index += 1
+    return labels
+
+
 # functions to show an image
 def imshow(img):
     npimg = img.numpy()  # C*H*W
@@ -52,11 +67,11 @@ def imshow(img):
 
 def test():
     trans = transforms.Compose([
-        transforms.ToPILImage('L'),                         # 转变成PIL image（灰度图）, pixels: 28*28, shape: H*W*C
-        transforms.Resize((224, 224), Image.ANTIALIAS),     # pixels: 224*224,  range: [0, 225], shape: H*W*C
-        transforms.ToTensor(),                              # 转变成Tensor, range: [0, 1.0], shape: C*H*W
+        transforms.ToPILImage('L'),  # 转变成PIL image（灰度图）, pixels: 28*28, shape: H*W*C
+        transforms.Resize((224, 224), Image.ANTIALIAS),  # pixels: 224*224,  range: [0, 225], shape: H*W*C
+        transforms.ToTensor(),  # 转变成Tensor, range: [0, 1.0], shape: C*H*W
         # transforms.Normalize(0.5, 0.5)])      # 单通道用不了这个函数
-        transforms.Lambda(lambda x: x.sub(0.5).div(0.5))    # 归一化, range: [-1, 1]
+        transforms.Lambda(lambda x: x.sub(0.5).div(0.5))  # 归一化, range: [-1, 1]
     ])
 
     trainset = HCL(images_path="./HCL2000-100/HCL2000_100_train.npz",
