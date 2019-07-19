@@ -5,6 +5,7 @@ from torch import nn, optim
 
 import vgg
 import custom_dataset as ds
+import display_grayscale as dg
 import torchvision.transforms as transforms
 
 epochs = 5  # number of epochs to train
@@ -51,16 +52,28 @@ def validate(model, device, test_loader, criterion):
         test_loss += criterion(output, target).item()  # sum up batch loss
         pred = output.argmax(dim=1, keepdim=True)  # get the index of the max log-probability
         correct += pred.eq(target.view_as(pred)).sum().item()
-        test_loss /= data.size(0)
+        # test_loss /= data.size(0)
 
     print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
         test_loss, correct, data.size(0),
         100. * correct / data.size(0)))
 
 
-def test(model, device, test_loader, criterion):
+def test(model, model_path, device, test_set, index):
+    checkpoint = torch.load(model_path)
+    model.load_state_dict(checkpoint['model_state_dict'])
     model.to(device)
     model.eval()
+    with torch.no_grad():
+        img, target = test_set.__getitem__(index)
+        # display the image
+        npimg = torch.squeeze(img).numpy()
+        dg.display(npimg)
+        # compute the output
+        img, target = img.to(device), target.to(device)
+        output = model(img.unsqueeze(0))
+        pred = output.argmax(dim=1, keepdim=True)
+        print("Predicted:", pred.item(), "\t GroundTruth:", target.item())
 
 
 def main():
@@ -96,9 +109,12 @@ def main():
     optimizer = optim.SGD(net.parameters(), lr=0.01, momentum=0.9)
 
     "train and validate"
-    for epoch in range(1, epochs + 1):
-        train(log_interval, net, device, train_loader, optimizer, criterion, epoch)
-        validate(net, device, test_loader, criterion)
+    # for epoch in range(1, epochs + 1):
+    #     train(log_interval, net, device, train_loader, optimizer, criterion, epoch)
+    #     validate(net, device, test_loader, criterion)
+
+    "test"
+    test(net, PATH, device, test_set, 1501)
 
 
 if __name__ == '__main__':
