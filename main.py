@@ -7,9 +7,10 @@ import vgg
 import custom_dataset as ds
 import torchvision.transforms as transforms
 
-epochs = 2  # number of epochs to train
+epochs = 20  # number of epochs to train
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 log_interval = 20  # how many batches to wait before logging training status
+PATH = "vgg_model.tar"
 
 
 def train(log_interval, model, device, train_loader, optimizer, criterion, epoch):
@@ -27,6 +28,14 @@ def train(log_interval, model, device, train_loader, optimizer, criterion, epoch
             print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
                 epoch, batch_idx * len(data), len(train_loader.dataset),
                 100. * batch_idx / len(train_loader), loss.item()))
+    # save the model
+    torch.save({
+        'epoch': epoch,
+        'model_state_dict': model.state_dict(),
+        'optimizer_state_dict': optimizer.state_dict(),
+        'loss': loss,
+        # ...
+    }, PATH)
 
 
 def validate(model, device, test_loader, criterion):
@@ -35,14 +44,14 @@ def validate(model, device, test_loader, criterion):
     test_loss = 0
     correct = 0
     with torch.no_grad():
-        for data, target in test_loader:
-            data, target = data.to(device), target.to(device)
-            output = model(data)
-            test_loss += criterion(output, target).item()  # sum up batch loss
-            pred = output.argmax(dim=1, keepdim=True)  # get the index of the max log-probability
-            correct += pred.eq(target.view_as(pred)).sum().item()
-
-    test_loss /= len(test_loader.dataset)
+        data_iter = iter(test_loader)
+        data, target = data_iter.next()
+        data, target = data.to(device), target.to(device)
+        output = model(data)
+        test_loss += criterion(output, target).item()  # sum up batch loss
+        pred = output.argmax(dim=1, keepdim=True)  # get the index of the max log-probability
+        correct += pred.eq(target.view_as(pred)).sum().item()
+        test_loss /= len(test_loader.dataset)
 
     print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
         test_loss, correct, len(test_loader.dataset),
@@ -55,8 +64,8 @@ def main():
 
     "load and normalize HCL2000-100 dataset"
     trans = transforms.Compose([
-        transforms.ToPILImage('L'),  # 转变成PIL image（灰度图）, pixels: 28*28, shape: H*W*C
-        transforms.Resize((224, 224), Image.ANTIALIAS),  # pixels: 224*224,  range: [0, 225], shape: H*W*C
+        # transforms.ToPILImage('L'),  # 转变成PIL image（灰度图）, pixels: 28*28, shape: H*W*C
+        # transforms.Resize((224, 224), Image.ANTIALIAS),  # pixels: 224*224,  range: [0, 225], shape: H*W*C
         transforms.ToTensor(),  # 转变成Tensor, range: [0, 1.0], shape: C*H*W
         transforms.Lambda(lambda x: x.sub(0.5).div(0.5))])  # 归一化, range: [-1, 1]
 
@@ -65,19 +74,19 @@ def main():
     train_set = ds.HCL(images_path="./HCL2000-100/HCL2000_100_train.npz",
                        labels_path="./HCL2000-100/HCL2000_100_train_label.npz",
                        transform=trans, target_transform=target_trans)
-    train_loader = torch.utils.data.DataLoader(train_set, batch_size=8, shuffle=True)
+    train_loader = torch.utils.data.DataLoader(train_set, batch_size=256, shuffle=True)
 
     test_set = ds.HCL(images_path="./HCL2000-100/HCL2000_100_test.npz",
                       labels_path="./HCL2000-100/HCL2000_100_test_label.npz",
                       transform=trans, target_transform=target_trans)
-    test_loader = torch.utils.data.DataLoader(test_set, batch_size=8, shuffle=False)
+    test_loader = torch.utils.data.DataLoader(test_set, batch_size=256, shuffle=True)
 
     "define the network"
     net = vgg.VGG('VGG16', 100)
 
     "define loss function and optimizer"
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
+    optimizer = optim.SGD(net.parameters(), lr=0.01, momentum=0.9)
 
     "train and validate"
     for epoch in range(1, epochs + 1):
