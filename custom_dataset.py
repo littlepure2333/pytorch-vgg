@@ -6,6 +6,9 @@ import torchvision
 from torch.utils.data.dataset import Dataset
 import torchvision.transforms as transforms
 
+# save the label dict which mapping the original labels to 0~99
+PATH = "label_dict.tar"
+
 """
 the beginning images and labels are ndarray,
 after init images are still ndarray, labels are tensor.
@@ -44,16 +47,31 @@ class HCL(Dataset):
 
 # 把原来的label映射到0-99
 def label_map(labels):
-    label_dict = {}
+    label_dict = torch.load(PATH)
     current_index = 0
+    for label in labels:
+        labels[current_index] = label_dict[label]
+        current_index += 1
+    return labels
+
+
+# generate the label dict which mapping the original labels to 0~99
+def generate_label_dict(labels):
+    label_dict = {}
     map_index = 0
     for label in labels:
         if label not in label_dict:
             label_dict[label] = map_index
             map_index += 1
-        labels[current_index] = label_dict[label]
-        current_index += 1
-    return labels
+    return label_dict
+
+
+# save the label dict which mapping the original labels to 0~99
+def save_label_dict(labels_path):
+    labels_data = np.load(labels_path)
+    labels = labels_data["arr_0"]
+    label_dict = generate_label_dict(labels)
+    torch.save(label_dict, PATH)
 
 
 # functions to show an image
@@ -74,8 +92,8 @@ def test():
         transforms.Lambda(lambda x: x.sub(0.5).div(0.5))  # 归一化, range: [-1, 1]
     ])
 
-    trainset = HCL(images_path="./HCL2000-100/HCL2000_100_train.npz",
-                   labels_path="./HCL2000-100/HCL2000_100_train_label.npz",
+    trainset = HCL(images_path="./HCL2000-100/HCL2000_100_test.npz",
+                   labels_path="./HCL2000-100/HCL2000_100_test_label.npz",
                    transform=trans)
 
     trainloader = torch.utils.data.DataLoader(trainset, batch_size=4, shuffle=True)
@@ -93,4 +111,6 @@ def test():
 
 
 if __name__ == '__main__':
+    # first of all, generate and save the label mapping dict
+    save_label_dict("./HCL2000-100/HCL2000_100_test_label.npz")
     test()
