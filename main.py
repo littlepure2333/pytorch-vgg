@@ -7,7 +7,7 @@ import vgg
 import custom_dataset as ds
 import torchvision.transforms as transforms
 
-epochs = 20  # number of epochs to train
+epochs = 5  # number of epochs to train
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 log_interval = 20  # how many batches to wait before logging training status
 PATH = "vgg_model.tar"
@@ -51,11 +51,16 @@ def validate(model, device, test_loader, criterion):
         test_loss += criterion(output, target).item()  # sum up batch loss
         pred = output.argmax(dim=1, keepdim=True)  # get the index of the max log-probability
         correct += pred.eq(target.view_as(pred)).sum().item()
-        test_loss /= len(test_loader.dataset)
+        test_loss /= data.size(0)
 
     print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
-        test_loss, correct, len(test_loader.dataset),
-        100. * correct / len(test_loader.dataset)))
+        test_loss, correct, data.size(0),
+        100. * correct / data.size(0)))
+
+
+def test(model, device, test_loader, criterion):
+    model.to(device)
+    model.eval()
 
 
 def main():
@@ -83,6 +88,8 @@ def main():
 
     "define the network"
     net = vgg.VGG('VGG16', 100)
+    # allow parallel compute on multiple GPUs
+    net = nn.DataParallel(net)
 
     "define loss function and optimizer"
     criterion = nn.CrossEntropyLoss()
