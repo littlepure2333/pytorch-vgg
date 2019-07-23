@@ -1,0 +1,22 @@
+authorName: littlepure
+experimentName: test_experiment
+trialConcurrency: 1
+maxExecDuration: 2h
+maxTrialNum: 10
+#choice: local, remote, pai, kubeflow
+trainingServicePlatform: local
+searchSpacePath: /home/tensor/jupyter/wsz/pytorch-vgg/NNI/search_space.json
+#choice: true, false
+useAnnotation: false
+tuner:
+  #choice: TPE, Random, Anneal, Evolution
+  builtinTunerName: TPE
+  classArgs:
+    #choice: maximize, minimize
+    optimize_mode: maximize
+trial:
+  command: python3 main.py
+  codeDir: /home/tensor/jupyter/wsz/pytorch-vgg
+  gpuNum: 1
+localConfig:
+  useActiveGpu: true

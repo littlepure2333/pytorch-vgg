@@ -1,4 +1,5 @@
 import torch
+import nni
 import torch.nn.functional as F
 from PIL import Image
 from torch import nn, optim
@@ -13,6 +14,7 @@ epochs = 5  # number of epochs to train
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 log_interval = 5  # how many batches to wait before logging training status
 PATH = "vgg_model.tar"
+best_accuracy = 0
 
 "record training process"
 writer = SummaryWriter(comment='test')
@@ -43,7 +45,8 @@ def train(log_interval, model, device, train_loader, test_loader, optimizer, cri
 
         # validate every 50 batches
         if record_index % 50 == 0:
-            validate(model, device, test_loader, criterion, epoch, record_index)
+            accuracy = validate(model, device, test_loader, criterion, epoch, record_index)
+            nni.report_intermediate_result(accuracy)
 
     # save the model every epoch
     torch.save({
@@ -60,6 +63,7 @@ def validate(model, device, test_loader, criterion, epoch, record_index):
     model.eval()
     test_loss = 0
     correct = 0
+    global best_accuracy
     with torch.no_grad():
         # data_iter = iter(test_loader)
         # data, target = data_iter.next()
@@ -72,12 +76,15 @@ def validate(model, device, test_loader, criterion, epoch, record_index):
 
     test_loss /= len(test_loader.dataset)
     accuracy = 100. * correct / len(test_loader.dataset)
+    if accuracy > best_accuracy:
+        best_accuracy = accuracy
 
     print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
         test_loss, correct, len(test_loader.dataset), accuracy))
 
     # record accuracy
     writer.add_scalar('validate/accuracy', accuracy, record_index)
+    return accuracy
 
 
 def test(model, model_path, device, test_set, index):
@@ -101,6 +108,17 @@ def main():
     """only for test"""
     # vgg.test()
 
+    "load NNI for automated machine learning experiments"
+    params = nni.get_next_parameter()
+    # or load default parameters
+    # params = {
+    #     "dropout_rate": 0.5,
+    #     "FC_size": 4096,
+    #     "batch_size": 256,
+    #     "learning_rate": 0.01,
+    #     "momentum": 0.9
+    # }
+
     "load and normalize HCL2000-100 dataset"
     trans = transforms.Compose([
         # transforms.ToPILImage('L'),  # 转变成PIL image（灰度图）, pixels: 28*28, shape: H*W*C
@@ -113,26 +131,27 @@ def main():
     train_set = ds.HCL(images_path="./HCL2000-100/HCL2000_100_train.npz",
                        labels_path="./HCL2000-100/HCL2000_100_train_label.npz",
                        transform=trans, target_transform=target_trans)
-    train_loader = torch.utils.data.DataLoader(train_set, batch_size=256, shuffle=True)
+    train_loader = torch.utils.data.DataLoader(train_set, batch_size=params['batch_size'], shuffle=True)
 
     test_set = ds.HCL(images_path="./HCL2000-100/HCL2000_100_test.npz",
                       labels_path="./HCL2000-100/HCL2000_100_test_label.npz",
                       transform=trans, target_transform=target_trans)
-    test_loader = torch.utils.data.DataLoader(test_set, batch_size=256, shuffle=True)
+    test_loader = torch.utils.data.DataLoader(test_set, batch_size=params['batch_size'], shuffle=True)
 
     "define the network"
-    net = vgg.VGG('VGG16', 100)
+    net = vgg.VGG('VGG16', 100, params['dropout_rate'], params['FC_size'])
     # allow parallel compute on multiple GPUs
     net = nn.DataParallel(net)
 
     "define loss function and optimizer"
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.SGD(net.parameters(), lr=0.01, momentum=0.9)
+    optimizer = optim.SGD(net.parameters(), lr=params['learning_rate'], momentum=params['momentum'])
 
     "train and validate"
     for epoch in range(1, epochs + 1):
         train(log_interval, net, device, train_loader, test_loader, optimizer, criterion, epoch)
         # validate(net, device, test_loader, criterion, epoch)
+    nni.report_final_result(best_accuracy)
 
     "test"
     # test(net, PATH, device, test_set, 1501)
