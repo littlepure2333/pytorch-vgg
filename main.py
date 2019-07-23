@@ -2,6 +2,7 @@ import torch
 import torch.nn.functional as F
 from PIL import Image
 from torch import nn, optim
+from tensorboardX import SummaryWriter
 
 import vgg
 import custom_dataset as ds
@@ -10,14 +11,17 @@ import torchvision.transforms as transforms
 
 epochs = 5  # number of epochs to train
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-log_interval = 20  # how many batches to wait before logging training status
+log_interval = 5  # how many batches to wait before logging training status
 PATH = "vgg_model.tar"
 
+"record training process"
+writer = SummaryWriter(comment='test')
 
-def train(log_interval, model, device, train_loader, optimizer, criterion, epoch):
+
+def train(log_interval, model, device, train_loader, test_loader, optimizer, criterion, epoch):
     model.to(device)
-    model.train()
     for batch_idx, (data, target) in enumerate(train_loader):
+        model.train()
         data = data.to(device)
         target = target.to(device)
         optimizer.zero_grad()
@@ -25,11 +29,23 @@ def train(log_interval, model, device, train_loader, optimizer, criterion, epoch
         loss = criterion(output, target)
         loss.backward()
         optimizer.step()
+
+        # print train progress every log_interval
         if batch_idx % log_interval == 0:
             print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
                 epoch, batch_idx * len(data), len(train_loader.dataset),
                 100. * batch_idx / len(train_loader), loss.item()))
-    # save the model
+
+        # record loss for every 10 batches
+        record_index = (epoch-1) * len(train_loader) + batch_idx + 1
+        if record_index % 10 == 0:
+            writer.add_scalar('Train/loss', loss.item(), record_index)
+
+        # validate every 50 batches
+        if record_index % 50 == 0:
+            validate(model, device, test_loader, criterion, epoch, record_index)
+
+    # save the model every epoch
     torch.save({
         'epoch': epoch,
         'model_state_dict': model.state_dict(),
@@ -39,24 +55,29 @@ def train(log_interval, model, device, train_loader, optimizer, criterion, epoch
     }, PATH)
 
 
-def validate(model, device, test_loader, criterion):
-    model.to(device)
+def validate(model, device, test_loader, criterion, epoch, record_index):
+    # model.to(device)
     model.eval()
     test_loss = 0
     correct = 0
     with torch.no_grad():
-        data_iter = iter(test_loader)
-        data, target = data_iter.next()
-        data, target = data.to(device), target.to(device)
-        output = model(data)
-        test_loss += criterion(output, target).item()  # sum up batch loss
-        pred = output.argmax(dim=1, keepdim=True)  # get the index of the max log-probability
-        correct += pred.eq(target.view_as(pred)).sum().item()
-        # test_loss /= data.size(0)
+        # data_iter = iter(test_loader)
+        # data, target = data_iter.next()
+        for batch_idx, (data, target) in enumerate(test_loader):
+            data, target = data.to(device), target.to(device)
+            output = model(data)
+            test_loss += criterion(output, target).item()  # sum up batch loss
+            pred = output.argmax(dim=1, keepdim=True)  # get the index of the max log-probability
+            correct += pred.eq(target.view_as(pred)).sum().item()
+
+    test_loss /= len(test_loader.dataset)
+    accuracy = 100. * correct / len(test_loader.dataset)
 
     print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
-        test_loss, correct, data.size(0),
-        100. * correct / data.size(0)))
+        test_loss, correct, len(test_loader.dataset), accuracy))
+
+    # record accuracy
+    writer.add_scalar('validate/accuracy', accuracy, record_index)
 
 
 def test(model, model_path, device, test_set, index):
@@ -109,12 +130,12 @@ def main():
     optimizer = optim.SGD(net.parameters(), lr=0.01, momentum=0.9)
 
     "train and validate"
-    # for epoch in range(1, epochs + 1):
-    #     train(log_interval, net, device, train_loader, optimizer, criterion, epoch)
-    #     validate(net, device, test_loader, criterion)
+    for epoch in range(1, epochs + 1):
+        train(log_interval, net, device, train_loader, test_loader, optimizer, criterion, epoch)
+        # validate(net, device, test_loader, criterion, epoch)
 
     "test"
-    test(net, PATH, device, test_set, 1501)
+    # test(net, PATH, device, test_set, 1501)
 
 
 if __name__ == '__main__':

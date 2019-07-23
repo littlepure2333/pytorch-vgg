@@ -1,3 +1,5 @@
 # Created by .ignore support plugin (hsz.mobi)
 /.idea/
 
+/label_dict.tar
+/vgg_model.tar
