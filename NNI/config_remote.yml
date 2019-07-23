@@ -1,0 +1,27 @@
+authorName: littlepure
+experimentName: test_experiment
+trialConcurrency: 1
+maxExecDuration: 4h
+maxTrialNum: 15
+#choice: local, remote, pai, kubeflow
+trainingServicePlatform: remote
+searchSpacePath: /home/tensor/jupyter/wsz/pytorch-vgg/NNI/search_space.json
+#choice: true, false
+useAnnotation: false
+tuner:
+  #choice: TPE, Random, Anneal, Evolution
+  builtinTunerName: TPE
+  classArgs:
+    #choice: maximize, minimize
+    optimize_mode: maximize
+trial:
+  command: python3 main.py
+  codeDir: /home/tensor/jupyter/wsz/pytorch-vgg
+  gpuNum: 2
+machineList:
+  - ip: 10.112.52.84
+    username: tensor
+    passwd: pris@727
+    #port can be skip if using default ssh port 22
+    #port: 22
+    useActiveGpu: true

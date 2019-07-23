@@ -16,8 +16,6 @@ log_interval = 5  # how many batches to wait before logging training status
 PATH = "vgg_model.tar"
 best_accuracy = 0
 
-"record training process"
-writer = SummaryWriter(comment='test')
 
 
 def train(log_interval, model, device, train_loader, test_loader, optimizer, criterion, epoch):
@@ -118,6 +116,14 @@ def main():
     #     "learning_rate": 0.01,
     #     "momentum": 0.9
     # }
+
+    "record training process"
+    global writer
+    writer = SummaryWriter(comment='-dr='+str(params['dropout_rate'])+
+                                   '-fc='+str(params['FC_size'])+
+                                   '-bs='+str(params['batch_size'])+
+                                   '-lr='+str(params['learning_rate'])+
+                                   '-mo='+str(params['momentum']))
 
     "load and normalize HCL2000-100 dataset"
     trans = transforms.Compose([
