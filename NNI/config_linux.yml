@@ -2,7 +2,7 @@ authorName: littlepure
 experimentName: test_experiment
 trialConcurrency: 1
 maxExecDuration: 2h
-maxTrialNum: 10
+maxTrialNum: 20
 #choice: local, remote, pai, kubeflow
 trainingServicePlatform: local
 searchSpacePath: /home/tensor/jupyter/wsz/pytorch-vgg/NNI/search_space.json
@@ -14,6 +14,12 @@ tuner:
   classArgs:
     #choice: maximize, minimize
     optimize_mode: maximize
+#assessor:
+#  #choice: Medianstop
+#  builtinAssessorName: Medianstop
+#  classArgs:
+#    #choice: maximize, minimize
+#    optimize_mode: maximize
 trial:
   command: python3 main.py
   codeDir: /home/tensor/jupyter/wsz/pytorch-vgg

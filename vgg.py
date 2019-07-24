@@ -1,7 +1,4 @@
 """VGG11/13/16/19 in Pytorch."""
-"""
-输入网络的image为244x244
-"""
 import torch
 import torch.nn as nn
 

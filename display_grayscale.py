@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from PIL import Image
 
+
 # input is a H*W ndarray
 def display(npimg):
     plt.imshow(npimg, cmap='gray')
@@ -28,14 +29,14 @@ if __name__ == '__main__':
     plt.imshow(images[1].reshape((28, 28)), cmap=plt.cm.gray_r)
     plt.subplot(223)
     plt.imshow(images[2].reshape((28, 28)), cmap='gray')
-    # plt.subplot(224)
+    plt.subplot(224)
+    plt.imshow(images[2].reshape((28, 28)), cmap='gray_r')
     plt.show()
 
     plt.figure()
     pilimage = Image.fromarray(images[3].reshape((28, 28)), 'L')
-    pilimage = pilimage.resize((224,224))
+    pilimage = pilimage.resize((224, 224))
     plt.imshow(pilimage, cmap='gray_r')
-    # plt.imshow(images[3].reshape((28, 28)), cmap='gray_r')
     plt.show()
 
     # 分别显示4张图

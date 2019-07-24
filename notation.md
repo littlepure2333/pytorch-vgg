@@ -46,8 +46,7 @@ import Decoder
     ```python
     MAX_OVERFLOW = 100
     
-    Class FooBar:
-    
+    class FooBar:
         def foo_bar(self, print_):
             print(print_)
     ```

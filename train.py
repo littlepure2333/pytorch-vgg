@@ -1,11 +1,9 @@
-import nni
 import torch
 import torchvision.transforms as transforms
 from tensorboardX import SummaryWriter
 from torch import nn, optim
 
 import custom_dataset as ds
-import display_grayscale as dg
 import vgg
 
 epochs = 5  # number of epochs to train
@@ -13,7 +11,6 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 log_interval = 5  # how many batches to wait before logging training status
 PATH = "vgg_model.tar"
 batch_size = 256
-best_accuracy = 0
 
 
 def train(log_interval, model, device, train_loader, test_loader, optimizer, criterion, epoch):
@@ -32,17 +29,16 @@ def train(log_interval, model, device, train_loader, test_loader, optimizer, cri
         if batch_idx % log_interval == 0:
             print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
                 epoch, batch_idx * len(data), len(train_loader.dataset),
-                       100. * batch_idx / len(train_loader), loss.item()))
+                100. * batch_idx / len(train_loader), loss.item()))
 
-        # record train loss for every 10 batches
+        # record loss for every 10 batches
         record_index = (epoch - 1) * len(train_loader) + batch_idx + 1
-        if record_index % 10 == 0:
-            writer.add_scalar('Train/loss', loss.item(), record_index)
+        if record_index % 20 == 0:
+            train_writer.add_scalar('Loss', loss.item(), record_index)
 
-        # validate and record validate loss every 10 batches
-        if record_index % 10 == 0:
-            accuracy = validate(model, device, test_loader, criterion, epoch, record_index)
-            nni.report_intermediate_result(accuracy)
+        # validate every 10 batches
+        if record_index % 20 == 0:
+            validate(model, device, test_loader, criterion, epoch, record_index)
 
     # save the model every epoch
     torch.save({
@@ -55,11 +51,10 @@ def train(log_interval, model, device, train_loader, test_loader, optimizer, cri
 
 
 def validate(model, device, test_loader, criterion, epoch, record_index):
-    # model.to(device)
     model.eval()
     test_loss = 0
     correct = 0
-    global best_accuracy
+
     with torch.no_grad():
         # data_iter = iter(test_loader)
         # data, target = data_iter.next()
@@ -73,54 +68,36 @@ def validate(model, device, test_loader, criterion, epoch, record_index):
             if batch_idx == 9:
                 break
 
-    length = 9*batch_size
+    length = 9 * batch_size
     test_loss /= length
     accuracy = 100. * correct / length
-    if accuracy > best_accuracy:
-        best_accuracy = accuracy
 
     print('\nValidate set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
         test_loss, correct, length, accuracy))
 
-    # record accuracy
-    writer.add_scalar('validate/accuracy', accuracy, record_index)
-    return accuracy
-
-
-def test(model, model_path, device, test_set, index):
-    checkpoint = torch.load(model_path)
-    model.load_state_dict(checkpoint['model_state_dict'])
-    model.to(device)
-    model.eval()
-    with torch.no_grad():
-        img, target = test_set.__getitem__(index)
-        # display the image
-        npimg = torch.squeeze(img).numpy()
-        dg.display(npimg)
-        # compute the output
-        img, target = img.to(device), target.to(device)
-        output = model(img.unsqueeze(0))
-        pred = output.argmax(dim=1, keepdim=True)
-        print("Predicted:", pred.item(), "\t GroundTruth:", target.item())
+    # record validate loss and accuracy
+    validate_writer.add_scalar('Loss', test_loss, record_index)
+    validate_writer.add_scalar('validate/accuracy', accuracy, record_index)
 
 
 def main():
-    """load NNI for automated machine learning experiments"""
-    params = nni.get_next_parameter()
-    # or load default parameters
-    # params = {
-    #     "dropout_rate": 0.5,
-    #     "FC_size": 4096,
-    #     "learning_rate": 0.01,
-    # }
+    # load default parameters
+    params = {
+        "dropout_rate": 0.5,
+        "FC_size": 4096,
+        "learning_rate": 0.01
+    }
 
     "record training process"
-    global writer
-    writer = SummaryWriter(comment='-dr='+str(params['dropout_rate'])+
-                                   '-fc='+str(params['FC_size'])+
-                                   '-bs='+str(params['batch_size'])+
-                                   '-lr='+str(params['learning_rate'])+
-                                   '-mo='+str(params['momentum']))
+    global train_writer, validate_writer
+    train_writer = SummaryWriter(comment='_train' +
+                                 '-dr=' + str(params['dropout_rate']) +
+                                 '-fc=' + str(params['FC_size']) +
+                                 '-lr=' + str(params['learning_rate']))
+    validate_writer = SummaryWriter(comment='_validate' +
+                                    '-dr=' + str(params['dropout_rate']) +
+                                    '-fc=' + str(params['FC_size']) +
+                                    '-lr=' + str(params['learning_rate']))
 
     "load and normalize HCL2000-100 dataset"
     trans = transforms.Compose([
@@ -139,7 +116,7 @@ def main():
     test_set = ds.HCL(images_path="./HCL2000-100/HCL2000_100_test.npz",
                       labels_path="./HCL2000-100/HCL2000_100_test_label.npz",
                       transform=trans, target_transform=target_trans)
-    test_loader = torch.utils.data.DataLoader(test_set, batch_size=batch_size, shuffle=True)
+    test_loader = torch.utils.data.DataLoader(test_set, batch_size=batch_size, shuffle=False)
 
     "define the network"
     net = vgg.VGG('VGG16', 100, params['dropout_rate'], params['FC_size'])
@@ -148,13 +125,12 @@ def main():
 
     "define loss function and optimizer"
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.SGD(net.parameters(), lr=params['learning_rate'], momentum=params['momentum'])
+    optimizer = optim.SGD(net.parameters(), lr=params['learning_rate'], momentum=0.9)
 
     "train and validate"
     for epoch in range(1, epochs + 1):
         train(log_interval, net, device, train_loader, test_loader, optimizer, criterion, epoch)
         # validate(net, device, test_loader, criterion, epoch)
-    nni.report_final_result(best_accuracy)
 
     "test"
     # test(net, PATH, device, test_set, 1501)

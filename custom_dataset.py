@@ -26,7 +26,7 @@ class HCL(Dataset):
         self.images = images.transpose((0, 2, 3, 1))  # N*H*W*C
         labels = labels_data["arr_0"]
         labels_map = label_map(labels)
-        self.labels = torch.from_numpy(labels_map.astype(np.long))
+        self.labels = torch.from_numpy(labels_map.astype('int16'))
         self.transforms = transform
         self.target_transforms = target_transform
 
