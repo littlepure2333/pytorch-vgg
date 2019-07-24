@@ -11,6 +11,12 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 log_interval = 5  # how many batches to wait before logging training status
 PATH = "vgg_model.tar"
 batch_size = 256
+# load default parameters
+params = {
+    "dropout_rate": 0.5,
+    "FC_size": 4096,
+    "learning_rate": 0.01
+}
 
 
 def train(log_interval, model, device, train_loader, test_loader, optimizer, criterion, epoch):
@@ -81,14 +87,7 @@ def validate(model, device, test_loader, criterion, epoch, record_index):
 
 
 def main():
-    # load default parameters
-    params = {
-        "dropout_rate": 0.5,
-        "FC_size": 4096,
-        "learning_rate": 0.01
-    }
-
-    "record training process"
+    """record training process"""
     global train_writer, validate_writer
     train_writer = SummaryWriter(comment='_train' +
                                  '-dr=' + str(params['dropout_rate']) +
