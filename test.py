@@ -52,7 +52,7 @@ def main():
     net = vgg.VGG('VGG16', 100, params['dropout_rate'], params['FC_size'])
 
     "test one of the 30000 images"
-    test(net, PATH, device, test_set, 2701)
+    test(net, PATH, device, test_set, 20000)
 
 
 if __name__ == '__main__':

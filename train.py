@@ -14,7 +14,7 @@ batch_size = 256
 # load default parameters
 params = {
     "dropout_rate": 0.5,
-    "FC_size": 1024,
+    "FC_size": 4096,
     "learning_rate": 0.01
 }
 
@@ -37,12 +37,12 @@ def train(log_interval, model, device, train_loader, test_loader, optimizer, cri
                 epoch, batch_idx * len(data), len(train_loader.dataset),
                 100. * batch_idx / len(train_loader), loss.item()))
 
-        # record loss for every 10 batches
+        # record train loss for every 20 batches
         record_index = (epoch - 1) * len(train_loader) + batch_idx + 1
         if record_index % 20 == 0:
             train_writer.add_scalar('Loss', loss.item(), record_index)
 
-        # validate every 10 batches
+        # validate and record validate loss every 20 batches
         if record_index % 20 == 0:
             validate(model, device, test_loader, criterion, epoch, record_index)
 
@@ -75,7 +75,7 @@ def validate(model, device, test_loader, criterion, epoch, record_index):
                 break
 
     length = 10 * batch_size
-    test_loss /= length
+    test_loss /= 10
     accuracy = 100. * correct / length
 
     print('\nValidate set: Average loss: {:.4f}, Accuracy: {}/{} ({:.2f}%)\n'.format(

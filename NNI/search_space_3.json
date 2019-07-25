@@ -1,0 +1,6 @@
+{
+  "dropout_rate": {"_type": "choice", "_value": [0.5]},
+  "FC_size":      {"_type": "choice", "_value": [1024, 2048, 4096]},
+  "learning_rate":{"_type": "choice", "_value": [0.01]},
+  "momentum":     {"_type": "uniform","_value": [0.7, 1.0]}
+}

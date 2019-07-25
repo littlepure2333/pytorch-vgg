@@ -1,11 +1,11 @@
 authorName: littlepure
-experimentName: test_experiment
+experimentName: FC_size_experiment
 trialConcurrency: 1
-maxExecDuration: 2h
-maxTrialNum: 20
+maxExecDuration: 1h
+maxTrialNum: 12
 #choice: local, remote, pai, kubeflow
 trainingServicePlatform: local
-searchSpacePath: /home/tensor/jupyter/wsz/pytorch-vgg/NNI/search_space.json
+searchSpacePath: /home/tensor/jupyter/wsz/pytorch-vgg/NNI/search_space_3.json
 #choice: true, false
 useAnnotation: false
 tuner:

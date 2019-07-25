@@ -5,7 +5,7 @@ maxExecDuration: 4h
 maxTrialNum: 15
 #choice: local, remote, pai, kubeflow
 trainingServicePlatform: remote
-searchSpacePath: /home/tensor/jupyter/wsz/pytorch-vgg/NNI/search_space.json
+searchSpacePath: D:/git/pytorch-vgg/NNI/search_space.json
 #choice: true, false
 useAnnotation: false
 tuner:
@@ -15,8 +15,8 @@ tuner:
     #choice: maximize, minimize
     optimize_mode: maximize
 trial:
-  command: python3 main.py
-  codeDir: /home/tensor/jupyter/wsz/pytorch-vgg
+  command: python train_nni.py
+  codeDir: D:/git/pytorch-vgg
   gpuNum: 2
 machineList:
   - ip: 10.112.52.84
