@@ -14,7 +14,7 @@ batch_size = 256
 # load default parameters
 params = {
     "dropout_rate": 0.5,
-    "FC_size": 4096,
+    "FC_size": 1024,
     "learning_rate": 0.01
 }
 
@@ -74,11 +74,11 @@ def validate(model, device, test_loader, criterion, epoch, record_index):
             if batch_idx == 9:
                 break
 
-    length = 9 * batch_size
+    length = 10 * batch_size
     test_loss /= length
     accuracy = 100. * correct / length
 
-    print('\nValidate set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
+    print('\nValidate set: Average loss: {:.4f}, Accuracy: {}/{} ({:.2f}%)\n'.format(
         test_loss, correct, length, accuracy))
 
     # record validate loss and accuracy

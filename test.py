@@ -9,12 +9,13 @@ import vgg
 import train
 
 batch_size = 256
-PATH = "vgg_model.tar"
-device = "cpu"
+PATH = train.PATH
+device = train.device
 
 
 def test(model, model_path, device, test_set, index):
     checkpoint = torch.load(model_path)
+    model = torch.nn.DataParallel(model)
     model.load_state_dict(checkpoint['model_state_dict'])
     model.to(device)
     model.eval()
@@ -50,8 +51,8 @@ def main():
     "define the network"
     net = vgg.VGG('VGG16', 100, params['dropout_rate'], params['FC_size'])
 
-    "test"
-    test(net, PATH, device, test_set, 1501)
+    "test one of the 30000 images"
+    test(net, PATH, device, test_set, 2701)
 
 
 if __name__ == '__main__':

@@ -73,13 +73,13 @@ def validate(model, device, test_loader, criterion, epoch, record_index):
             if batch_idx == 9:
                 break
 
-    length = 9*batch_size
+    length = 10*batch_size
     test_loss /= length
     accuracy = 100. * correct / length
     if accuracy > best_accuracy:
         best_accuracy = accuracy
 
-    print('\nValidate set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
+    print('\nValidate set: Average loss: {:.4f}, Accuracy: {}/{} ({:.2f}%)\n'.format(
         test_loss, correct, length, accuracy))
 
     # record accuracy
