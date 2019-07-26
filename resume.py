@@ -6,7 +6,7 @@ from torch import nn, optim
 import custom_dataset as ds
 import vgg
 
-epochs = 150  # number of epochs to train
+epochs = 5  # number of epochs to train
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 log_interval = 5  # how many batches to wait before logging training status
 PATH = "vgg_model.tar"
@@ -15,8 +15,7 @@ batch_size = 256
 params = {
     "dropout_rate": 0.5,
     "FC_size": 2048,
-    "learning_rate": 0.01,
-    "momentum": 0.85
+    "learning_rate": 0.01
 }
 
 
@@ -50,7 +49,7 @@ def train(log_interval, model, device, train_loader, test_loader, optimizer, cri
     # save the model every epoch
     torch.save({
         'epoch': epoch,
-        'model_state_dict': model.module.state_dict(),
+        'model_state_dict': model.state_dict(),
         'optimizer_state_dict': optimizer.state_dict(),
         'loss': loss,
         # ...
@@ -125,7 +124,7 @@ def main():
 
     "define loss function and optimizer"
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.SGD(net.parameters(), lr=params['learning_rate'], momentum=params['momentum'])
+    optimizer = optim.SGD(net.parameters(), lr=params['learning_rate'], momentum=0.9)
 
     "train and validate"
     for epoch in range(1, epochs + 1):

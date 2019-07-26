@@ -10,12 +10,11 @@ import train
 
 batch_size = 256
 PATH = train.PATH
-device = train.device
+device = torch.device("cpu")
 
 
 def test(model, model_path, device, test_set, index):
     checkpoint = torch.load(model_path)
-    model = torch.nn.DataParallel(model)
     model.load_state_dict(checkpoint['model_state_dict'])
     model.to(device)
     model.eval()
